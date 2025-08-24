@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/sitemap-proxy/*"
+  to = "https://oneclickseo.com/:splat"
+  status = 200
+  force = true

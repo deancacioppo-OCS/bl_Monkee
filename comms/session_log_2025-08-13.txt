@@ -1,0 +1,27 @@
+**SESSION LOG - AUGUST 13, 2025**
+-----------------------------------
+
+**Objective:** Resolve `401` error and establish a functional connection to the WordPress REST API for the "Client Level Blog Monkee" application.
+
+**1. Initial Diagnosis:**
+- The initial attempt to connect to the WordPress API at `https://oneclickseo.com/` failed with a `401 - Not Logged In` error.
+- The initial credentials for the user `L3tm31n695695!!@@##` were rejected.
+
+**2. Debugging Steps:**
+- Guided the user to generate a new Application Password within the WordPress admin panel for a different user.
+- Received new credentials:
+    - **Site:** `https://oneclickseo.com/`
+    - **Username:** `Dean`
+    - **Password:** `f4mt frT5 6bP7 ob7U S3vY fqdM`
+- Successfully authenticated with the new credentials by fetching the user profile from the `/wp-json/wp/v2/users/me` endpoint.
+- Performed a "smoke test" to verify API capabilities:
+    - Successfully uploaded a test file (`dummy.txt`) to the media library via the `/wp-json/wp/v2/media` endpoint, confirming `upload_files` permission.
+    - Successfully created a test post (`Test Post from Gemini`) via the `/wp-json/wp/v2/posts` endpoint, confirming `edit_posts` and `publish_posts` permissions.
+
+**3. Resolution & Outcome:**
+- The WordPress REST API connection is fully functional.
+- The application can now authenticate, upload media, and create posts using the provided credentials for the user "Dean".
+- The root cause of the initial failure was incorrect or invalid Application Password credentials.
+
+**4. Cleanup:**
+- Awaiting user confirmation to delete the created test post (ID: 5258) and uploaded media file (ID: 5257).

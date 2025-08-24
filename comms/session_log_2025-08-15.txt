@@ -1,0 +1,31 @@
+**SESSION LOG - AUGUST 15, 2025**
+-----------------------------------
+
+**Objective:** Implement a mechanism to prevent the application from using the same topic twice for a given client and to update the client's sitemap with new post URLs.
+
+**1. Initial Request & Discussion:**
+- The user requested a feature to prevent duplicate content generation and to update the client's sitemap for internal linking.
+- We discussed several options for implementing this feature, including:
+    - A local storage-based approach.
+    - A simple server-side solution.
+    - Using a third-party Backend-as-a-Service (BaaS).
+- The user opted for a simple server-side solution.
+
+**2. Implementation of the Backend Server:**
+- A new backend server was created using Node.js, Express, and SQLite.
+- The server exposes a simple REST API to manage used topics and sitemap URLs for each client.
+- The API endpoints include:
+    - `GET /api/clients/:clientId/used-topics`
+    - `POST /api/clients/:clientId/used-topics`
+    - `GET /api/clients/:clientId/sitemap-urls`
+    - `POST /api/clients/:clientId/sitemap-urls`
+
+**3. Frontend Integration:**
+- The frontend application was modified to communicate with the new backend API instead of using local storage.
+- The `ContentEditor` component was updated to send requests to the backend to record used topics and new sitemap URLs upon successful post publication.
+- The `GenerationWorkflow` component was updated to check for duplicate topics by querying the backend before generating a new post.
+
+**4. Deployment & Resolution:**
+- The changes to both the frontend and the new backend were pushed to the GitHub repository.
+- The application was successfully deployed to Netlify.
+- The user confirmed that the new feature is working as expected.

@@ -1,0 +1,21 @@
+**SESSION LOG - AUGUST 13, 2025 (Part 2)**
+-------------------------------------------
+
+**Objective:** Implement sitemap integration and content generation enhancements, and debug sitemap URL issue.
+
+**1. Feature Implementation:**
+- Modified `types.ts` to add `sitemapUrl` and `sitemapUrls` to the `Client` interface.
+- Modified `components/ClientForm.tsx` to add the "Sitemap URL" input field, integrate `useSitemap`, and pass sitemap data.
+- Created `hooks/useSitemap.ts` to handle fetching and parsing sitemaps.
+- Modified `components/ClientManager.tsx` to accept and save `sitemapUrls`.
+- Modified `services/geminiService.ts` to update the AI prompt for content generation to include external and internal linking instructions using sitemap URLs.
+
+**2. Debugging Sitemap URL Issue:**
+- User reported "not a valid URL" error for `https://oneclickseo.com/post-sitemap.xml`.
+- Diagnosed as a potential CORS issue due to cross-origin requests from the local development server.
+- Implemented a proxy in `vite.config.ts` to route sitemap requests through the local server.
+- Modified `hooks/useSitemap.ts` to use the proxied URL.
+
+**3. Current Status:**
+- All code modifications for the new features and CORS fix are complete.
+- The local server is currently not running (user cancelled previous attempts to start it).

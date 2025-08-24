@@ -1,0 +1,5 @@
+
+{
+  "name": "Client Level Blog MONKEE",
+  "description": "An AI-powered application to automate blog content generation for multiple clients. It uses the Gemini API to discover topics, generate blog posts in a client's specific voice, create featured images, and publish directly to WordPress."
+}
