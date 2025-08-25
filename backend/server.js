@@ -241,7 +241,7 @@ app.post('/api/gemini-proxy', async (req, res) => {
       });
       const response = await result.response;
       
-      // Extract the text content from the response
+      // Extract the text content from the response and send it in the format frontend expects
       const text = response.text();
       res.json({ text: text });
     }
