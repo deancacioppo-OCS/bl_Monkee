@@ -63,6 +63,51 @@ const createTables = async () => {
 // Call the function to create tables when the server starts
 createTables();
 
+// Function to crawl a website and extract URLs
+async function crawlWebsite(url) {
+  const crawledUrls = new Set();
+  const queue = [url];
+  const baseUrl = new URL(url).origin;
+
+  while (queue.length > 0) {
+    const currentUrl = queue.shift();
+    if (crawledUrls.has(currentUrl)) {
+      continue;
+    }
+
+    try {
+      const response = await fetch(currentUrl);
+      if (!response.ok) {
+        continue;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('text/html')) {
+        continue;
+      }
+
+      crawledUrls.add(currentUrl);
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      $('a').each((i, link) => {
+        const href = $(link).attr('href');
+        if (href) {
+          const absoluteUrl = new URL(href, baseUrl).href;
+          if (absoluteUrl.startsWith(baseUrl) && !crawledUrls.has(absoluteUrl)) {
+            queue.push(absoluteUrl);
+          }
+        }
+      });
+    } catch (error) {
+      logger.error(`Error crawling ${currentUrl}: ${error.message}`);
+    }
+  }
+
+  return crawledUrls;
+}
+
 app.get('/api/clients/:clientId/used-topics', async (req, res, next) => {
   const { clientId } = req.params;
   logger.info(`Fetching used topics for client: ${clientId}`);
@@ -138,53 +183,15 @@ app.get('/api/sitemap-proxy', async (req, res) => {
   }
 });
 
+// Crawl Endpoint
 app.get('/api/crawl', async (req, res) => {
   const { url } = req.query;
   if (!url) {
-    return res.status(400).json({ error: 'URL is required.' });
+    return res.status(400).json({ error: 'URL parameter is required.' });
   }
 
   try {
-    const crawledUrls = new Set();
-    const queue = [url];
-    const baseUrl = new URL(url).origin;
-
-    while (queue.length > 0) {
-      const currentUrl = queue.shift();
-      if (crawledUrls.has(currentUrl)) {
-        continue;
-      }
-
-      try {
-        const response = await fetch(currentUrl);
-        if (!response.ok) {
-          continue;
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('text/html')) {
-          continue;
-        }
-
-        crawledUrls.add(currentUrl);
-
-        const html = await response.text();
-        const $ = cheerio.load(html);
-
-        $('a').each((i, link) => {
-          const href = $(link).attr('href');
-          if (href) {
-            const absoluteUrl = new URL(href, baseUrl).href;
-            if (absoluteUrl.startsWith(baseUrl) && !crawledUrls.has(absoluteUrl)) {
-              queue.push(absoluteUrl);
-            }
-          }
-        });
-      } catch (error) {
-        logger.error(`Error crawling ${currentUrl}: ${error.message}`);
-      }
-    }
-
+    const crawledUrls = await crawlWebsite(url);
     res.json(Array.from(crawledUrls));
   } catch (error) {
     logger.error(`Error crawling website from ${url}: ${error.message}`);
