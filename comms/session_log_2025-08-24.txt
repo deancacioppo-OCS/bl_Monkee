@@ -1,0 +1,63 @@
+**Session Log - August 24, 2025**
+
+**Objective:** Get the "Client Level Blog Monkee" application running locally and deployed to Netlify (frontend) and Render (backend) with a secure Gemini API proxy.
+
+**1. Initial Context & Catch-up:**
+- Received project context and folder structure.
+- Attempted to read previous session logs from `comms/` directory.
+- Encountered issues with `read_many_files` and `glob` due to default `.gitignore` respect.
+- Debugged by using `glob` with `respect_git_ignore=False` to find absolute paths.
+- Successfully read logs using `read_file` individually, confirming `read_many_files` issue.
+- Reviewed session logs from Aug 12, Aug 13 (Part 1 & 2), and Aug 15, detailing previous work on WordPress integration, sitemap functionality, and backend development (Node.js, Express, SQLite/PostgreSQL).
+
+**2. Addressing Gemini API Key Exposure (Netlify Build Failure):**
+- User reported Netlify build failures due to "AIza***" secrets detected in build output.
+- Identified `services/geminiService.ts` was directly using `import.meta.env.VITE_API_KEY`.
+- **Decision:** Implement a secure Gemini API proxy through the backend.
+
+**3. Backend Refactoring (Proxy Implementation - `backend/server.js`):**
+- Read `backend/server.js`. Noted discrepancy: previous log mentioned SQLite, but `server.js` uses PostgreSQL (`pg`).
+- Added `GoogleGenerativeAI` import.
+- Added a new `POST /api/gemini-proxy` endpoint to handle Gemini API calls securely on the backend. This endpoint receives `model`, `contents`, and `config` from the frontend, makes the actual Gemini API call using `process.env.GEMINI_API_KEY_BACKEND`, and returns the response.
+- **Initial Error:** Introduced a `SyntaxError: Identifier 'express' has already been declared` due to accidental duplication of initial setup code when inserting the new endpoint. This error consistently appeared at line 141 (later 144) in Render logs.
+
+**4. Frontend Refactoring (Proxy Implementation - `services/geminiService.ts`):**
+- Modified `services/geminiService.ts` to remove direct `VITE_API_KEY` usage.
+- Replaced direct `ai.models.generateContent` and `ai.models.generateImages` calls with a new `callGeminiProxy` helper function that makes `fetch` requests to the backend's `/api/gemini-proxy` endpoint.
+
+**5. Backend Dependencies:**
+- Added `@google/generative-ai` to `backend/package.json`.
+
+**6. Git & Deployment Challenges (Initial Repository):**
+- **Commit & Push:** Attempted to commit and push changes.
+    - `git commit -m "feat: Implement Gemini API proxy"` was successful.
+    - `git push` was rejected due to remote having work not present locally.
+- **Merge Conflict:** `git pull origin master` resulted in a merge conflict in `backend/server.js`.
+    - User was guided to manually resolve the conflict in `backend/server.js` (removing `<<<<<<<`, `=======`, `>>>>>>>` markers and keeping the correct code).
+    - User successfully `git add`ed and `git commit`ed the merge (commit `815fda8`).
+- **Persistent Render Error:** Despite `815fda8` being pushed to GitHub's `master` branch, Render continued to fail with the `SyntaxError` at line 144, indicating the `backend/server.js` file on GitHub was still incorrect.
+- **Netlify Success:** Netlify successfully deployed the frontend (commit `a99b5a0`, the merge commit before `815fda8`), confirming the frontend proxy changes were live. Netlify's secrets scanning passed after `VITE_API_KEY` and `GEMINI_API_KEY` were removed from its environment variables.
+
+**7. Decision for Clean Slate (New Repository):**
+- Due to persistent, unresolvable issues with the `backend/server.js` file on the old GitHub `master` branch and the user's difficulty with Git commands, the decision was made to start fresh.
+- **New GitHub Repository:** `https://github.com/deancacioppo-OCS/bl_Monkee.git` was created.
+- **Local Git Reset:** User deleted the local `.git` folder to completely clear old history.
+- **Initial Push to New Repo:** User was guided to `git init`, `git add .`, `git commit`, `git remote add origin`, and `git push -u origin master` to upload the current local code to the new `bl_Monkee` repository.
+
+**8. Connecting New Deployments:**
+- **Netlify (Frontend):** User successfully connected a new Netlify project to `bl_Monkee`, deploying from `master`.
+- **Render (Backend):** User was guided to connect a new Render Web Service to `bl_Monkee`, deploying from `master`, with `backend` as the root directory.
+    - **Environment Variables:** User was instructed to set `DATABASE_URL` (value retrieved from previous logs) and `GEMINI_API_KEY_BACKEND` (user's own key).
+
+**9. Persistent Backend Error (New Repository):**
+- Render deployments for the new `bl_Monkee` repository *still* failed with the `SyntaxError: Identifier 'express' has already been declared` at line 144.
+- This indicated that the `backend/server.js` file pushed to the *new* repository was still incorrect.
+- **Root Cause:** The user's local `backend/server.js` file, despite previous attempts to fix it, was still containing the duplicate code when pushed to the new repository.
+
+**10. Final Attempt to Fix `backend/server.js` on GitHub:**
+- User was provided the **complete and correct** `backend/server.js` content.
+- User was instructed to manually edit `backend/server.js` directly on GitHub (for the `bl_Monkee` repo, `master` branch), replacing *everything* with the provided correct code, and committing directly to `master`.
+
+**Current Status:**
+- The user has confirmed they have completed the manual edit and commit of `backend/server.js` directly on GitHub for the `bl_Monkee` repository.
+- A new Render deployment should now be triggered for the `bl_Monkee` backend. We are awaiting the outcome of this deployment.

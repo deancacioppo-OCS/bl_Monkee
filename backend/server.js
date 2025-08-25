@@ -349,10 +349,30 @@ app.post('/api/gemini-proxy', async (req, res) => {
   const { model, contents, config } = req.body;
 
   try {
-    const aiModel = genAI.getGenerativeModel({ model: model });
-    const result = await aiModel.generateContent({ contents, ...config });
-    const response = await result.response;
-    res.json(response);
+    // Check if this is an image generation request
+    if (config.isImageGeneration) {
+      const aiModel = genAI.getGenerativeModel({ model: model });
+      const result = await aiModel.generateImages({
+        prompt: contents,
+        ...config
+      });
+      
+      if (result.generatedImages && result.generatedImages.length > 0) {
+        const imageBytes = result.generatedImages[0].image.imageBytes;
+        res.json({ 
+          imageBytes: imageBytes,
+          success: true 
+        });
+      } else {
+        throw new Error("Image generation failed to produce an image.");
+      }
+    } else {
+      // Handle text generation
+      const aiModel = genAI.getGenerativeModel({ model: model });
+      const result = await aiModel.generateContent({ contents, ...config });
+      const response = await result.response;
+      res.json(response);
+    }
   } catch (error) {
     logger.error(`Error calling Gemini API via proxy: ${error.message}`, { stack: error.stack });
     res.status(500).json({ error: 'Failed to call Gemini API.', details: error.message });
@@ -364,11 +384,6 @@ app.use((err, req, res, next) => {
   logger.error(`Unhandled error: ${err.message}`, { stack: err.stack, path: req.path, method: req.method, ip: req.ip });
   res.status(500).json({ error: 'An unexpected error occurred.' });
 });
-
-app.listen(port, () => {
-  logger.info(`Server is running on http://localhost:${port}`);
-});
-
 
 app.listen(port, () => {
   logger.info(`Server is running on http://localhost:${port}`);

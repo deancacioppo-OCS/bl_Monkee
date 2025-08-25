@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
+import { buildApiUrl, API_CONFIG } from '../config/api';
 import { Modal } from './ui/Modal';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
@@ -49,7 +50,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, existi
     }
     setIsCrawling(true);
     try {
-      const response = await fetch(`/api/crawl?url=${encodeURIComponent(formData.websiteUrl)}`);
+      const response = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.CRAWL}?url=${encodeURIComponent(formData.websiteUrl)}`));
       if (!response.ok) {
         throw new Error('Failed to crawl website.');
       }
