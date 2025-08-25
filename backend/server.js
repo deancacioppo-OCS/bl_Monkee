@@ -95,7 +95,7 @@ app.get('/api/clients/:clientId/sitemap-urls', async (req, res, next) => {
   logger.info(`Fetching sitemap URLs for client: ${clientId}`);
   try {
     const { rows } = await pool.query('SELECT url FROM sitemap_urls WHERE client_id = $1', [clientId]);
-    logger.info(`Successfully fetched ${rows.length} sitemap URLs for client: ${clientId}`);
+    logger.info(`Successfully fetched ${rows.length} sitemap URLs for client ${clientId}`);
     res.json(rows.map(row => row.url));
   } catch (err) {
     logger.error(`Error fetching sitemap URLs for client ${clientId}: ${err.message}`);
@@ -222,9 +222,16 @@ app.post('/api/gemini-proxy', async (req, res) => {
         throw new Error("Image generation failed to produce an image.");
       }
     } else {
-      // Handle text generation
+      // Handle text generation - Fix the content format
       const aiModel = genAI.getGenerativeModel({ model: model });
-      const result = await aiModel.generateContent({ contents, ...config });
+      
+      // Ensure contents is properly formatted for Gemini API
+      const formattedContents = Array.isArray(contents) ? contents : [{ text: contents }];
+      
+      const result = await aiModel.generateContent({ 
+        contents: formattedContents, 
+        ...config 
+      });
       const response = await result.response;
       res.json(response);
     }
