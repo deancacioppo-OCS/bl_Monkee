@@ -12,7 +12,7 @@ async function callGeminiProxy(model: string, contents: string, config: any = {}
       },
       body: JSON.stringify({
         model,
-        contents,
+        contents: contents, // Send as string, backend will format it
         config
       }),
     });
