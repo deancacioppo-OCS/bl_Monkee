@@ -240,7 +240,10 @@ app.post('/api/gemini-proxy', async (req, res) => {
         ...config 
       });
       const response = await result.response;
-      res.json(response);
+      
+      // Extract the text content from the response
+      const text = response.text();
+      res.json({ text: text, response: response });
     }
   } catch (error) {
     logger.error(`Error calling Gemini API via proxy: ${error.message}`, { stack: error.stack });
