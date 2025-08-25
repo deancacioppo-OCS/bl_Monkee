@@ -7,6 +7,8 @@ export const API_CONFIG = {
   ENDPOINTS: {
     GEMINI_PROXY: '/api/gemini-proxy',
     CRAWL: '/api/crawl',
+    CLIENTS: '/api/clients',
+    CLIENT: (clientId: string) => `/api/clients/${clientId}`,
     CLIENT_TOPICS: (clientId: string) => `/api/clients/${clientId}/used-topics`,
     CLIENT_SITEMAP: (clientId: string) => `/api/clients/${clientId}/sitemap-urls`,
     SITEMAP_PROXY: '/api/sitemap-proxy',

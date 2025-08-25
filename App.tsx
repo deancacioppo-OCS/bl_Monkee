@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Client, BlogPost } from './types';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { buildApiUrl, API_CONFIG } from './config/api';
 import ClientManager from './components/ClientManager';
 import GenerationWorkflow from './components/GenerationWorkflow';
 import ContentEditor from './components/ContentEditor';
@@ -12,10 +12,50 @@ import ContentEditor from './components/ContentEditor';
 import { BrainCircuitIcon } from './components/icons/BrainCircuitIcon';
 
 export default function App(): React.ReactNode {
-  const [clients, setClients] = useLocalStorage<Client[]>('blog-monkee-clients', []);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [currentBlogPost, setCurrentBlogPost] = useState<BlogPost | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load clients from backend on app start
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENTS));
+        if (response.ok) {
+          const backendClients = await response.json();
+          
+          // Load sitemap URLs for each client
+          const clientsWithSitemaps = await Promise.all(
+            backendClients.map(async (client: Client) => {
+              try {
+                const sitemapResponse = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENT_SITEMAP(client.id)));
+                if (sitemapResponse.ok) {
+                  const sitemapUrls = await sitemapResponse.json();
+                  return { ...client, sitemapUrls };
+                }
+                return client;
+              } catch (error) {
+                console.error(`Error loading sitemap for client ${client.id}:`, error);
+                return client;
+              }
+            })
+          );
+          
+          setClients(clientsWithSitemaps);
+        }
+      } catch (error) {
+        console.error('Error loading clients:', error);
+        // Fall back to empty array on error
+        setClients([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadClients();
+  }, []);
 
   const selectedClient = useMemo(() => {
     return clients.find(c => c.id === selectedClientId) ?? null;
@@ -29,6 +69,17 @@ export default function App(): React.ReactNode {
   const resetToWorkflow = () => {
     setCurrentBlogPost(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen font-sans bg-slate-900 text-slate-200 items-center justify-center">
+        <div className="text-center">
+          <BrainCircuitIcon className="w-16 h-16 text-indigo-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-400">Loading clients...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen font-sans bg-slate-900 text-slate-200">

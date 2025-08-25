@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Client } from '../types';
+import { buildApiUrl, API_CONFIG } from '../config/api';
 import ClientForm from './ClientForm';
 import { Button } from './ui/Button';
 import { PlusIcon } from './icons/PlusIcon';
@@ -19,29 +20,78 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, setClients, sele
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const handleSaveClient = (client: Client, sitemapUrls: string[]) => {
-    const clientToSave: Client = {
-      ...client,
-      sitemapUrls: sitemapUrls,
-    };
-    setClients(prev => {
-      const existing = prev.find(c => c.id === clientToSave.id);
+  const handleSaveClient = async (client: Client, sitemapUrls: string[]) => {
+    try {
+      const clientToSave: Client = {
+        ...client,
+        sitemapUrls: sitemapUrls,
+      };
+
+      // Check if this is an update or create
+      const existing = clients.find(c => c.id === clientToSave.id);
+      
       if (existing) {
-        return prev.map(c => c.id === clientToSave.id ? clientToSave : c);
+        // Update existing client
+        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENT(client.id)), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientToSave)
+        });
+        if (!response.ok) throw new Error('Failed to update client');
+      } else {
+        // Create new client
+        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENTS), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientToSave)
+        });
+        if (!response.ok) throw new Error('Failed to create client');
       }
-      return [...prev, clientToSave];
-    });
-    // If this is the first client, select it
-    if(clients.length === 0) {
-      onSelectClient(client.id);
+
+      // Save sitemap URLs to backend
+      if (sitemapUrls.length > 0) {
+        for (const url of sitemapUrls) {
+          await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENT_SITEMAP(client.id)), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+        }
+      }
+
+      // Update local state
+      setClients(prev => {
+        if (existing) {
+          return prev.map(c => c.id === clientToSave.id ? clientToSave : c);
+        }
+        return [...prev, clientToSave];
+      });
+
+      // If this is the first client, select it
+      if(clients.length === 0) {
+        onSelectClient(client.id);
+      }
+    } catch (error) {
+      console.error('Error saving client:', error);
+      alert('Failed to save client. Please try again.');
     }
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  const handleDeleteClient = async (clientId: string) => {
     if (window.confirm('Are you sure you want to delete this client? This cannot be undone.')) {
-      setClients(prev => prev.filter(c => c.id !== clientId));
-      if (selectedClientId === clientId) {
-        onSelectClient(null);
+      try {
+        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CLIENT(clientId)), {
+          method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete client');
+        
+        setClients(prev => prev.filter(c => c.id !== clientId));
+        if (selectedClientId === clientId) {
+          onSelectClient(null);
+        }
+      } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Failed to delete client. Please try again.');
       }
     }
   };
